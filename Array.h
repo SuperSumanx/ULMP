@@ -8,6 +8,8 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
+#include <cstdlib>
+
 //define a class to hold information about Array Exceptions
 class ArrayException {
 public:
@@ -29,9 +31,9 @@ class Array {
 private:
 
     T* array;
-    unsigned int length;
+    unsigned int length, maxLength;
 
-    T* copyAndDelete(T *a, unsigned int oldLength, unsigned int newLength) {
+    T* copy(T *a, unsigned int oldLength, unsigned int newLength) {
         T*n=new T[newLength];
         if(oldLength==0) {
             //don't do anything, just allocate memory
@@ -40,30 +42,38 @@ private:
         for(unsigned int i=0; i<oldLength; i++) {
             n[i]=a[i];
         }
-
-        delete[] a;
         return n;
     }
 public :
 
     Array() {
         length=0;
+        maxLength=1;
+        array=new T[maxLength];
     }
     ~Array() {
         length=0;
+        maxLength=0;
         delete[] array;
     }
 
     Array(unsigned int length, T content=0) {
         this->length=length;
-        array=new T[this->length];
+        maxLength=length*2; // memory vs speed tradeoff; speed wins
+        array=new T[this->maxLength];
         for(int i=0; i<this->length; i++)
             array[i]=content;
     }
 
     void push_back(T p) {
+        if(length==maxLength){
+            maxLength=maxLength*2;
+            T * tempPointer = new T[maxLength];
+            tempPointer=copy(array,length,maxLength);
+            delete[] array;
+            array = tempPointer;
+        }
         length++;
-        array=copyAndDelete(array, length-1, length);
         array[length-1]=p;
     }
 
