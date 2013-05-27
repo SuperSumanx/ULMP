@@ -1,4 +1,4 @@
-#include "ulmp.h"
+#include "ulmp.hpp"
 
 ULMP::ULMP()
 {
@@ -6,6 +6,7 @@ ULMP::ULMP()
     operatorList[1]='-';
     operatorList[2]='*';
     operatorList[3]='/';
+    operatorList[4]='^';
 }
 
 ULMP::ULMP(std::string expression)
@@ -14,15 +15,16 @@ ULMP::ULMP(std::string expression)
     operatorList[1]='-';
     operatorList[2]='*';
     operatorList[3]='/';
+    operatorList[4]='^';
     s=expression;
 }
 
-void ULMP::setString(const char* expression){
+void ULMP::setString(const char* expression) {
     s=expression;
 }
 
-int ULMP::charToInt(char c){
-    switch(c){
+int ULMP::charToInt(char c) {
+    switch(c) {
     case '1':
         return 1;
         break;
@@ -100,11 +102,14 @@ double ULMP::stringToDouble(std::string &s) {
         }
     }
 
-    for(unsigned int i=0; i<s.length(); i++){
+    for(unsigned int i=0; i<s.length(); i++) {
         c=charToInt(s.at(i));
         answer=answer+(c*pow10(s.length()-i-1));
     }
     return (answer*negate)/divisorForDecimal;
+}
+std::string ULMP::doubleToString (double d) {
+    return std::to_string(d);
 }
 
 bool ULMP::isOperator(char c)  {
@@ -116,6 +121,8 @@ bool ULMP::isOperator(char c)  {
 }
 
 bool ULMP::doesSucceedOperator(std::string &s, int index) const {
+    if(index==0)
+        return true;
     for(unsigned int i=0; i<sizeof(operatorList); i++ ) {
         if(s.at(index-1)==operatorList[i]) { //if previous element of string is a character return true
             return true;
@@ -128,6 +135,11 @@ bool ULMP::doesSucceedOperator(std::string &s, int index) const {
 void ULMP::removeWhiteSpace(std::string &s) {
     for(unsigned int i=0; i<s.length(); i++) {
         if(s.at(i)==' ') {
+            s.erase(i,1);
+            i=-1;
+            continue;
+        }
+        if(s.at(i)==',') {
             s.erase(i,1);
             i=-1;
             continue;
@@ -163,8 +175,35 @@ void ULMP::populateNumbers(std::string &s) {
     }
 }
 
-double ULMP::parseString(){
+void ULMP::checkForBrackets(std::string& str) {
+    std::stack<unsigned int> brackets;
+    std::string sub;
+    for(int j=0; j<str.length(); j++) {
+        if(str.at(j)=='(') {
+            brackets.push(j);
+        }
+        if(str.at(j)==')') {
+            unsigned int start=brackets.top();
+            brackets.pop();
+            unsigned int end=j;
+            sub=str.substr(start+1, end-start-1);
+            ULMP u;
+            double b = u.parseString(sub);
+            sub=doubleToString(b);
+            str.erase(start, (end-start) +1); // Why +2 ? +1 because of array indexing,
+            //length should be index + 1.
+            //The other +1 because in subtraction the first operand is not considered
+            str.insert(start,sub);
+            j=-1;
+
+        }
+    }
+}
+
+double ULMP::parseString() {
     removeWhiteSpace(s);
+    checkForBrackets(s);
+
 
     operatorLocations=new Array<short>();
     operators=new Array<char>();
@@ -182,7 +221,7 @@ double ULMP::parseString(){
 double ULMP::parseString(std::string expression) {
     s=expression;
     removeWhiteSpace(s);
-
+    checkForBrackets(s);
     operatorLocations=new Array<short>();
     operators=new Array<char>();
 
@@ -199,7 +238,7 @@ double ULMP::parseString(std::string expression) {
 double ULMP::parseString(char* expression) {
     s=expression;
     removeWhiteSpace(s);
-
+    checkForBrackets(s);
     operatorLocations=new Array<short>();
     operators=new Array<char>();
 
@@ -213,19 +252,28 @@ double ULMP::parseString(char* expression) {
     return answer;
 }
 
-double ULMP::evaluateExpression(){
+double ULMP::evaluateExpression() {
     double temp=0;
-    for(int i=0; i<operators->size(); i++){
-        if(operators->at(i) == '/'){
+    for(int i=0; i<operators->size(); i++) {
+        if(operators->at(i) == '^') {
+            temp=pow(numbers->at(i),numbers->at(i+1));
+            numbers->at(i)=temp;
+            numbers->erase(i+1);
+            operators->erase(i);
+            i=-1;
+        }
+    }
+    for(int i=0; i<operators->size(); i++) {
+        if(operators->at(i) == '/') {
             temp=numbers->at(i)/numbers->at(i+1);
             numbers->at(i)=temp;
             numbers->erase(i+1);
             operators->erase(i);
             i=-1;
-        }     
+        }
     }
-    for(int i=0; i<operators->size(); i++){
-        if(operators->at(i) == '*'){
+    for(int i=0; i<operators->size(); i++) {
+        if(operators->at(i) == '*') {
             temp=numbers->at(i)*numbers->at(i+1);
             numbers->at(i)=temp;
             numbers->erase(i+1);
@@ -233,8 +281,8 @@ double ULMP::evaluateExpression(){
             i=-1;
         }
     }
-    for(int i=0; i<operators->size(); i++){
-        if(operators->at(i) == '+'){
+    for(int i=0; i<operators->size(); i++) {
+        if(operators->at(i) == '+') {
             temp=numbers->at(i)+numbers->at(i+1);
             numbers->at(i)=temp;
             numbers->erase(i+1);
@@ -242,8 +290,8 @@ double ULMP::evaluateExpression(){
             i=-1;
         }
     }
-    for(int i=0; i<operators->size(); i++){
-        if(operators->at(i) == '-'){
+    for(int i=0; i<operators->size(); i++) {
+        if(operators->at(i) == '-') {
             temp=numbers->at(i)-numbers->at(i+1);
             numbers->at(i)=temp;
             numbers->erase(i+1);
