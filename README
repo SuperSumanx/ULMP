@@ -2,6 +2,6 @@ ULMP
 Ultra Light Math Parser
 Developed By Sumanth - 2013
 
-A simple math expression parser with the ability to add, subtract, multiply,
-and divide with precedence. Also supports brackets to override precedence. More features to be added...
- 
+Simple Math Expression Parser written from scratch using C++.
+Supports the basic four operators (+,-,*,/), along with power function (^).
+Also supports single parameter and double parameter functions(for now, only built-in functions)
