@@ -1,7 +1,7 @@
 /*
    The MIT License (MIT)
 
-   Copyright (c) 2013 Sumanth
+   Copyright (c) 2013 Sumanth V
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,23 @@
    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
    THE SOFTWARE.
-*/
-
-/* ULMP
- * Ultra Light Math Parser
- * Developed By Sumanth in 2013
- **/
-/* This is an example program written to demonstrate the ULMP class
- * which handles all the mathematical expresssions
  */
 
 #include "ulmp.hpp"
-#include "Array.hpp"
-#include <iostream>
 #include <string>
-using namespace std;
-
-int main()
-{
-    ULMP u;
-    cout.precision(15);
-    //std::string exp="sin(234+52/235*2)+2345/34";
-    std::string exp;
-    cin >> exp;
-    cout << "The string was " <<exp<< endl;
-    cout << "The answer is " << u.parseString(exp) << endl;
+#include <ctime>
+int main(int argc, char **argv) {
+    std::string expr="2/3+2";
+    double a;
+    /* This is a benchmark */
+    clock_t start= clock();
+    for(int i=0; i<100000; i++) { 
+        ULMPParse("sin(cosh(sin(cos(sin(cos(20) * sinh(20))*cos(20))*tan(20))*acos(1.5234)))"); //using the C-API, which is yet to be polished
+    }
+    clock_t endTime= clock();
+    //This test gives me approx. 30 seconds on my Core 2 Duo E4300 running Linux Mint 15
+    std::cout << "Time taken for parse = " <<(double) (endTime - start)/CLOCKS_PER_SEC << std::endl;
+    
     return 0;
 }
 

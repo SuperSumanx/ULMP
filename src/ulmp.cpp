@@ -1,7 +1,7 @@
 /*
    The MIT License (MIT)
 
-   Copyright (c) 2013 Sumanth v
+   Copyright (c) 2013 Sumanth V
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -21,10 +21,9 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
    THE SOFTWARE.
    */
-
 #include "ulmp.hpp"
-
-ULMP::ULMP()
+#include <cstdio>
+ULMPCore::ULMPCore()
 {
     operatorList[0]='+';
     operatorList[1]='-';
@@ -33,11 +32,13 @@ ULMP::ULMP()
     operatorList[4]='^';
 
     functionList=new Array<std::string>;
-    /* Trignometric functions (as defined in cmath)
-    */
-    functionList->push_back("sin");
-    functionList->push_back("cos");
-    functionList->push_back("tan");
+
+    /* Inverse functions (as defined in cmath)
+     */
+    functionList->push_back("asinh");
+    functionList->push_back("acosh");
+    functionList->push_back("atanh");
+
     functionList->push_back("asin");
     functionList->push_back("acos");
     functionList->push_back("atan");
@@ -46,9 +47,11 @@ ULMP::ULMP()
     functionList->push_back("sinh");
     functionList->push_back("cosh");
     functionList->push_back("tanh");
-    functionList->push_back("asinh");
-    functionList->push_back("acosh");
-    functionList->push_back("atanh");
+    /* Trignometric functions (as defined in cmath)
+    */
+    functionList->push_back("sin");
+    functionList->push_back("cos");
+    functionList->push_back("tan");
     /* Exponential and logarithmic functions (as defined in cmath)
     */
     functionList->push_back("exp");
@@ -69,10 +72,9 @@ ULMP::ULMP()
     functionList->push_back("max");
     functionList->push_back("min");
     functionList->push_back("abs");
+
 }
-
-
-int ULMP::charToInt(char c) {
+int ULMPCore::charToInt(char c) { //Looks simple, but does error checking :)
     switch(c) {
     case '1':
         return 1;
@@ -105,11 +107,11 @@ int ULMP::charToInt(char c) {
         return 0;
         break;
     default:
-        return -1;
+        return 10; //error code
         break;
     }
 }
-/* stringToDouble to convert a string to a double
+/* stringToDouble to convert a string to a long double
  * Example number: 235.53
  * decPosition will be 3
  * s.length() after erasure of decimal will be 5
@@ -129,12 +131,11 @@ int ULMP::charToInt(char c) {
  * and added to the previous result
  */
 
-double ULMP::stringToDouble(std::string str) {
+long double ULMPCore::stringToDouble(std::string str) {
     unsigned int divisorForDecimal=1;
     unsigned short c;
-    double answer=0.0;
+    long double answer=0.0;
     int negate=1;
-
     for(unsigned int i=0; i<str.length(); i++) {
         if(str.at(i)=='.') {
             str.erase(i,1);
@@ -148,20 +149,25 @@ double ULMP::stringToDouble(std::string str) {
             str.erase(i,1);
             negate*=-1;
             i=-1;
+            break;
+        }
+        if(str.at(i)=='+') {
+            str.erase(i,1);
+            i=-1;
         }
     }
-
     for(unsigned int i=0; i<str.length(); i++) {
         c=charToInt(str.at(i));
+        if(c==10) throw ULMPError(ULMPUnknownToken, std::string("Undefined tokens in expression")); //if we find a 10, it means a non-number character was found, so throw an error
         answer=answer+(c*pow10(str.length()-i-1));
     }
     return (answer*negate)/divisorForDecimal;
 }
-std::string ULMP::doubleToString (double d) {
+std::string ULMPCore::doubleToString (long double d) {
     return std::to_string(d);
 }
 
-bool ULMP::isOperator(char c)  {
+bool ULMPCore::isOperator(char c)  {
     for(unsigned int i=0; i<sizeof(operatorList) ; i++) {
         if(c==operatorList[i])
             return true;
@@ -169,7 +175,8 @@ bool ULMP::isOperator(char c)  {
     return false;
 }
 
-bool ULMP::doesSucceedOperator(int index) const {
+
+bool ULMPCore::doesSucceedOperator(int index) const {
     if(index==0)
         return true;
     for(unsigned int i=0; i<sizeof(operatorList); i++ ) {
@@ -180,39 +187,59 @@ bool ULMP::doesSucceedOperator(int index) const {
     return false; // else false
 
 }
-int ULMP::findNextOperator(int index) {
+
+int ULMPCore::findNextOperator(int index) {
     for(int i=0; i<operatorLocations->size()-1; i++) {
         if(operatorLocations->at(i)<index && index< operatorLocations->at(i+1)) {
             return operatorLocations->at(i+1);
         }
     }
+    return -2; //will never reach here
 }
-
-bool ULMP::solveFunctions() {
+bool ULMPCore::checkIfFuncIndexIsMultiFunc(unsigned int index) {
+    switch(index) {
+    case 17:
+        return true;
+    case 20:
+        return true;
+    case 23:
+        return true;
+    case 24:
+        return true;
+    default:
+        return false;
+    }
+}
+bool ULMPCore::solveFunctions() {
     multiFunc=false;
+    bool multiParam=false;
     std::size_t funcIndex;
-    double funcArg, funcArg2, answer;
+    long double *funcArg=0, *funcArg2=0, answer;// = 6
     unsigned int startOfFunc, lengthOfFunc;
     std::size_t commaIndex=0;
     for(unsigned int i=0; i<s.length(); i++) {
-        if(s.at(i)==',') {
-            specialParse(s);
+        if(s.at(i)==',') { //if we find this is a function with more than one parameter, do the special parse
+            specialParse(s); //this modifies the string BTW
             multiFunc=true;
-            return multiFunc;
+            return multiFunc; //we are done. this was called from another instance of ULMPCore class, and so we are just partially parsing the string
         }
     }
+    // ****************************************
+    // This is reached, only when string is of form, e.g. mod2.000|3.000 * sin2.3000
     commaIndex=s.find('|');
-    for(int i=0; i<functionList->size(); i++) {
+    for(int i=0; i<functionList->size(); i++) { // NOTE: i is the function no in functionList array
         funcIndex=s.find(functionList->at(i));
         if(funcIndex!=std::string::npos) {
             //continue performing operations
-            startOfFunc=funcIndex+(functionList->at(i).length());
-            lengthOfFunc=findNextOperator(startOfFunc)-startOfFunc;
-            if(commaIndex!=std::string::npos) {
-                funcArg=stringToDouble(s.substr(startOfFunc, commaIndex-startOfFunc) );
-                funcArg2=stringToDouble(s.substr(commaIndex+1, lengthOfFunc-commaIndex-1));
+            startOfFunc=funcIndex+(functionList->at(i).length()); //we want to get to '2' in sin20.000
+            lengthOfFunc=findNextOperator(startOfFunc)-startOfFunc;// = 6
+            multiParam=checkIfFuncIndexIsMultiFunc(i);
+            if(multiParam) {
+                funcArg=new long double(stringToDouble(s.substr(startOfFunc, commaIndex-startOfFunc) ));
+
+                funcArg2=new long double(stringToDouble(s.substr(commaIndex+1, lengthOfFunc-commaIndex-1)));
             } else {
-                funcArg=stringToDouble(s.substr(startOfFunc, lengthOfFunc));
+                funcArg=new long double(stringToDouble(s.substr(startOfFunc, lengthOfFunc)));
             }
             answer=computeFunction(i, funcArg, funcArg2);
             s.replace(startOfFunc-functionList->at(i).length() , lengthOfFunc+functionList->at(i).length() , doubleToString(answer) );
@@ -221,80 +248,80 @@ bool ULMP::solveFunctions() {
     }
     return multiFunc;
 }
-double ULMP::computeFunction(int index, double fArg, double fArg2) {
-    const double oneDegree=0.0174532925;
+long double ULMPCore::computeFunction(int index, long double *fArg, long double *fArg2) throw (ULMPError) {
+    const long double oneDegree=0.0174532925;
     switch(index) {
     case 0:
-        return sin(fArg*oneDegree);
+        return asinh(*fArg*oneDegree);
     case 1:
-        return cos(fArg*oneDegree);
+        return acosh(*fArg*oneDegree);
     case 2:
-        return tan(fArg*oneDegree);
+        return atanh(*fArg*oneDegree);
     case 3:
-        return asin(fArg*oneDegree);
+        return acos(*fArg*oneDegree);
     case 4:
-        return acos(fArg*oneDegree);
+        return asin(*fArg*oneDegree);
     case 5:
-        return atan(fArg*oneDegree);
+        return atan(*fArg*oneDegree);
     case 6:
-        return sinh(fArg*oneDegree);
+        return sinh(*fArg*oneDegree);
     case 7:
-        return cosh(fArg*oneDegree);
+        return cosh(*fArg*oneDegree);
     case 8:
-        return tanh(fArg*oneDegree);
+        return tanh(*fArg*oneDegree);
     case 9:
-        return asinh(fArg*oneDegree);
+        return sin(*fArg*oneDegree);
     case 10:
-        return acosh(fArg*oneDegree);
+        return cos(*fArg*oneDegree);
     case 11:
-        return atanh(fArg*oneDegree);
+        return tan(*fArg*oneDegree);
     case 12:
-        return exp(fArg);
+        return exp(*fArg);
     case 13:
-        return log(fArg);
+        return log(*fArg);
     case 14:
-        return log10(fArg);
+        return log10(*fArg);
     case 15:
-        return sqrt(fArg);
+        return sqrt(*fArg);
     case 16:
-        return cbrt(fArg);
+        return cbrt(*fArg);
     case 17:
-        return hypot(fArg, fArg2);
+        if(fArg2!=0)
+            return hypot(*fArg, *fArg2);
+        else throw ULMPError(ULMPNoFunctionParameter, "hypot expects two parameters but only one received");
     case 18:
-        return ceil(fArg);
+        return ceil(*fArg);
     case 19:
-        return floor(fArg);
+        return floor(*fArg);
     case 20:
-        return fmod(fArg, fArg2);
+        if(fArg2!=0)
+            return fmod(*fArg, *fArg2);
+        else throw ULMPError(ULMPNoFunctionParameter, "mod expects two parameters but only one received");
     case 21:
-        return round(fArg);
+        return round(*fArg);
     case 22:
-        return nearbyint(fArg);
+        return nearbyint(*fArg);
     case 23:
-        return fmax(fArg, fArg2);
+        if(fArg2!=0)
+            return fmax(*fArg, *fArg2);
+        else throw ULMPError(ULMPNoFunctionParameter, "max expects two parameters but only one received");
     case 24:
-        return fmin(fArg, fArg2);
+        if(fArg2!=0)
+            return fmin(*fArg, *fArg2);
+        else throw ULMPError(ULMPNoFunctionParameter, "min expects two parameters but only one received");
     case 25:
-        return fabs(fArg);
+        return fabs(*fArg);
 
     }
-
-}
-void ULMP::removeWhiteSpace() {
-    for(unsigned int i=0; i<s.length(); i++) {
-        if(s.at(i)==' ') {
-            s.erase(i,1);
-            i=-1;
-            continue;
-        }
-    }
+    return -1; //will never reach here
 }
 
-void ULMP::populateOperators() {
+
+void ULMPCore::populateOperators() {
     operatorLocations->clear();
     operators->clear();
     operatorLocations->push_back(-1);
-    for(unsigned int i=0; i<s.length(); i++) {
+    for(int i=0; i<s.length(); i++) {
         if( isOperator( s.at(i) ) && !doesSucceedOperator(i) ) { //if s at i is an operator and it does not succeed any other operator
             operators->push_back(s.at(i)); // add it to operators array
             operatorLocations->push_back(i);
@@ -312,17 +339,17 @@ void ULMP::populateOperators() {
  * operatorLocations.at(1)+1=8 and operatorLocations.at(2)=13
  * Therefore substr(operatorLocations.at(i)+1, operatorLocations.at(i+1) - operatorLocations.at(i)+1)
  */
-void ULMP::populateNumbers() {
+void ULMPCore::populateNumbers() {
     std::string num;
     for(int i=0; i<operatorLocations->size()-1; i++) {
         num=s.substr(operatorLocations->at(i)+1, operatorLocations->at(i+1) - (operatorLocations->at(i)+1) ) ;
         numbers->push_back( stringToDouble(num) );
     }
 }
-std::string& ULMP::getProcessedString() {
+std::string& ULMPCore::getProcessedString() {
     return s;
 }
-void ULMP::checkForBrackets() {
+void ULMPCore::checkForBrackets() {
     std::stack<unsigned int> brackets;
     std::string sub;
     for(int j=0; j<s.length(); j++) {
@@ -334,8 +361,8 @@ void ULMP::checkForBrackets() {
             brackets.pop();
             unsigned int end=j;
             sub=s.substr(start+1, end-start-1);
-            ULMP u;
-            double b = u.parseString(sub);
+            ULMPCore u;
+            long double b = u.parseString(sub);
             if(!u.checkIfMultiFunc()) {
                 sub=doubleToString(b);
                 s.erase(start, (end-start) +1);
@@ -351,47 +378,45 @@ void ULMP::checkForBrackets() {
     }
 }
 
-bool ULMP::checkIfMultiFunc() {
+bool ULMPCore::checkIfMultiFunc() {
     return multiFunc;
 }
 
-void ULMP::specialParse(std::string &expression) {
+void ULMPCore::specialParse(std::string &expression) {
     std::size_t commaIndex=s.find(',');
-    ULMP u;
+    ULMPCore u;
     std::string temp=doubleToString(u.parseString(expression.substr(0, commaIndex) ) );
     expression.replace(0,commaIndex, temp);
     commaIndex=s.find(',');
-    ULMP v;
+    ULMPCore v;
     temp=doubleToString(v.parseString(expression.substr(commaIndex+1, expression.length()-commaIndex-1)));
     expression.replace(commaIndex+1, expression.length()-commaIndex-1, temp);
 
     commaIndex=s.find(',');
     expression.replace(commaIndex,1,"|");
 }
-double ULMP::parseString(std::string expression) {
+
+long double ULMPCore::parseString(std::string expression) {
     s=expression;
-    removeWhiteSpace();
     checkForBrackets();
     operatorLocations=new Array<int>();
     operators=new Array<char>();
-
     populateOperators();
     if(solveFunctions()) {
         multiFunc=true;
         return -1;
     };
-    populateOperators();
-    numbers=new Array<double>();
+    numbers=new Array<long double>();
     populateNumbers();
     delete operatorLocations;
-    double answer = evaluateExpression();
+    long double answer = evaluateExpression();
     delete operators;
     delete numbers;
     return answer;
 }
 
-double ULMP::evaluateExpression() {
-    double temp=0;
+long double ULMPCore::evaluateExpression() {
+    long double temp=0;
     bool linearAdd=false, linearMul=false;
     for(unsigned int i=0; i<operators->size(); i++) {
         if(operators->at(i)=='+' || operators->at(i)=='-') linearAdd=true;
@@ -468,3 +493,110 @@ double ULMP::evaluateExpression() {
     }
     return numbers->at(0);
 }
+// END OF ULMPCore Class
+/* ***********************************************************/
+
+// BEGIN of ULMPError Class
+/*************************************************************/
+ULMPError::ULMPError(ULMPErrorEnum errorType, std::string errorMessage) {
+    er=errorType;
+    erMesg=errorMessage;
+}
+ULMPErrorEnum ULMPError::getErrorType() {
+    return er;
+}
+std::string& ULMPError::getErrorMessage() {
+    return erMesg;
+}
+// END of ULMPError Class
+/**************************************************************/
+ULMP::ULMP() {}
+void ULMP::removeWhiteSpace() {
+    for(int i=0; i<s.length(); i++) {
+        if(s.at(i)==' ') {
+            s.erase(i,1);
+            i=-1; //to erase consecutive spaces
+        }
+    }
+}
+
+bool ULMP::isNumber(char c) {
+    if(( ( (int) c ) >= ( (int) '0' ) ) && ( ( (int) c ) <=( (int) '9' )) ) //if ascii code of given char is between those of '0' and '9' then we are good
+        return true;
+    else
+        return false;
+}
+void ULMP::checkForErrors() {
+    /* This function is only going to check for integrity of the available operators.
+     * The test for unknown operators is in the charToInt function */
+    /* ***************************************************************/
+    /* Test for illegal operator order */
+    ULMPCore u; //temporary ULMPCore class used as reference
+    //All the below code is saying is that if two consecutive operators are present, and the second is not a + or a -, then it's an error
+    for(unsigned int i=0; i<s.size()-1; i++) {
+        for(unsigned int j=0; j<5; j++) {
+            if(u.isOperator(s.at(i)) && u.isOperator(s.at(i+1))) {
+                if(s.at(i+1)!='-') {
+                    if(s.at(i+1)=='+') break; //doesn't matter, its the unary + operator, so ignore
+                    std::string temp = "Illegal operator at index ";
+                    temp.append(std::to_string(i+1));
+                    throw ULMPError(ULMPIllegalOperator, temp);
+                }
+            }
+        }
+    }
+    /* *****************************************************************/
+    // Test for mismatched brackets
+    // This one is really simple, just loop through the string, count the number of opening and closing brackets, if they don't match, or ) comes before (, throw an error
+    unsigned int opening=0, closing = 0, firstOpened = 0;
+    bool opened=false;
+    for(unsigned int i=0; i<s.size(); i++) {
+        if(s.at(i)=='(') {
+            opening++;
+            if(opened==false) {
+                opened=true;
+                firstOpened=i;
+            }
+        }
+        if(s.at(i)==')') {
+            if(opening<=closing) {
+                std::string temp = "Illegal Bracket at index ";
+                temp.append(std::to_string(i));
+                throw ULMPError(ULMPIllegalBracket, temp);
+            }
+            closing++;
+        }
+    }
+    if(opening!=closing) {
+        std::string temp = "Bracket at index " + std::to_string(firstOpened) + " doesn't have a matching closing parenthesis";
+        throw ULMPError(ULMPBracketMismatch, std::string(temp));
+    }
+    /* *****************************************************************/
+    /* Test for illegal use of decimal, e.g. 2./2 */
+    for(unsigned int i=0; i<s.size(); i++) {
+        if(s.at(i)=='.' && !isNumber(s.at(i+1))) {
+            std::string temp="Illegal Decimal at index ";
+            temp.append(std::to_string(i));
+            throw ULMPError(ULMPIllegalDecimal, temp);
+        }
+    }
+}
+
+long double ULMP::parseString(std::string expr) {
+    s=expr;
+    removeWhiteSpace();
+    checkForErrors();
+    ULMPCore u;
+    return u.parseString(s);
+}
+
+extern "C" long double ULMPParse(const char *expr)
+{
+    ULMP u;
+    try {
+        return u.parseString(expr);
+    } catch(ULMPError e) {
+        printf("Error of type: %s \n", e.getErrorMessage().c_str());
+    }
+}
+

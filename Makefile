@@ -1,10 +1,11 @@
 CXX=g++
 INCDIR=include/
+CXXFLAGS=-lm -std=c++11 -g
 SRCDIR=src/
 EXECUTABLE=ULMPExampleProgram
 
 $(EXECUTABLE): clean
-	$(CXX) -lm -std=c++11 -g $(SRCDIR)*.cpp -I$(INCDIR) -o $(EXECUTABLE) 
+	$(CXX) $(CXXFLAGS) $(SRCDIR)*.cpp -I$(INCDIR) -o $(EXECUTABLE) 
 
 .PHONY: clean
 
