@@ -29,13 +29,16 @@ int main(int argc, char **argv) {
     std::string expr="2/3+2";
     double a;
     /* This is a benchmark */
-    clock_t start= clock();
-    for(int i=0; i<100000; i++) { 
-        ULMPParse("sin(cosh(sin(cos(sin(cos(20) * sinh(20))*cos(20))*tan(20))*acos(1.5234)))"); //using the C-API, which is yet to be polished
-    }
-    clock_t endTime= clock();
+    //clock_t start= clock();
+    //for(int i=0; i<100000; i++) { 
+    std::cin >> expr;
+    std::cout << "Answer is " << ULMPParse(expr.c_str()) << std::endl;
+    std::cout << "When string is " << "sin(cosh(sin(cos(sin(cos(20) * sinh(20))*cos(20))*tan(20))*acos(1.5234)))" << std::endl;
+    std::cout << "The answer is " << ULMPParse("sin(cosh(sin(cos(sin(cos(20) * sinh(20))*cos(20))*tan(20))*acos(1.5234)))"); //using the C-API, which is yet to be polished
+    //}
+    //clock_t endTime= clock();
     //This test gives me approx. 30 seconds on my Core 2 Duo E4300 running Linux Mint 15
-    std::cout << "Time taken for parse = " <<(double) (endTime - start)/CLOCKS_PER_SEC << std::endl;
+    //std::cout << "Time taken for parse = " <<(double) (endTime - start)/CLOCKS_PER_SEC << std::endl;
     
     return 0;
 }

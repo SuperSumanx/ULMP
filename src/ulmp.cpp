@@ -226,10 +226,10 @@ bool ULMPCore::solveFunctions() {
     }
     // ****************************************
     // This is reached, only when string is of form, e.g. mod2.000|3.000 * sin2.3000
-    commaIndex=s.find('|');
     for(int i=0; i<functionList->size(); i++) { // NOTE: i is the function no in functionList array
         funcIndex=s.find(functionList->at(i));
         if(funcIndex!=std::string::npos) {
+            commaIndex=s.find('|');
             //continue performing operations
             startOfFunc=funcIndex+(functionList->at(i).length()); //we want to get to '2' in sin20.000
             lengthOfFunc=findNextOperator(startOfFunc)-startOfFunc;// = 6
@@ -243,6 +243,7 @@ bool ULMPCore::solveFunctions() {
             }
             answer=computeFunction(i, funcArg, funcArg2);
             s.replace(startOfFunc-functionList->at(i).length() , lengthOfFunc+functionList->at(i).length() , doubleToString(answer) );
+            i--; //in case more of the same function is present.
             populateOperators();
         }
     }
