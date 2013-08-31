@@ -19,19 +19,29 @@
    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-   THE SOFTWARE.
- */
+   THE SOFTWARE.  */
 
 #include "ulmp.hpp"
 #include <string>
 #include <ctime>
+#include <iostream>
 
-int main(int argc, char **argv)
-{
-  std::string inputString;
-  std::cout << "Enter expression to be parsed"<< std::endl;
-  std::cin >> inputString ;
-  std::cout << "The answer is " << ULMPParse(inputString.c_str()) << std::endl;
-  return 0;
+long double computeJimmyJam(const std::vector<long double>& args) {
+    return (args.at(0)*args.at(1))/2*(args.at(0)/args.at(1));
+}
+long double max3(const std::vector<long double> & args) {
+    return args[0]>args[1]? args[1]>args[2]? args[1] : args[2] : args[1]>args[2]? args[1] : args[2];
+}
+int main(int argc, char **argv) {
+    ULMP u;
+    if(argc!=1 ){
+        std::cout << "Unrecognised argument " << argv[1] << std::endl;
+    }
+    try{
+        std::string inputString="2.324/234*sin(20)/2.243/mod(2,3)*tan(20.24)*max3(2,3,5)";
+        std::cout  << "The answer is " << u.parseString(inputString) << std::endl;
+    }catch(ULMPError e){
+        std::cout  << e.getErrorMessage() << std::endl;
+    }
 }
 

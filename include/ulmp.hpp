@@ -41,81 +41,79 @@
  * -----------------------------
  * PLANNED FEATURES
  * -----------------------------
- * 1. Error checking
- * 2. (Least priority) Variables
  * ******************************
  */
 
 #include <cmath> //required for sin, cos(to be implementated) , pow , etc.
-#include "Array.hpp"
+#include <vector>
 #include <string>
 #include <iostream>
 #include <stack> //Used in parenthesis processing
 
-enum ULMPErrorEnum
-{
-  ULMPNoFunctionParameter,
-  ULMPUnknownToken,
-  ULMPIllegalOperator,
-  ULMPIllegalBracket,
-  ULMPIllegalDecimal,
-  ULMPBracketMismatch
+class ULMPError {
+public:
+    ULMPError(std::string errorMessage);
+    std::string getErrorMessage();
+private:
+    std::string erMesg;
 };
 
-class ULMPError
-{
+namespace __impl { //do not use!!
+class ULMPCore {
 public:
-  ULMPError(ULMPErrorEnum errorType, std::string errorMessage);
-  std::string& getErrorMessage();
-  ULMPErrorEnum getErrorType();
+    ULMPCore();
+    long double parseString(std::string expression="");
+    bool checkIfMultiFunc();
+    bool isOperator(char c);
+    void defineFunction(std::string funcName, long double (*func)(const std::vector<long double>& args), unsigned int num);
+    std::string& getProcessedString();
+    std::vector<std::string> * functionList;
+    bool isNumber ( char c );
+    ~ULMPCore();
 private:
-  ULMPErrorEnum er;
-  std::string erMesg;
+    //list of allowable operators
+    bool multiFunc;
+    std::vector<long double> *numbers;
+    std::vector<char> operators;
+    std::vector<int> operatorLocations;
+    std::vector<long double(*)(const std::vector<long double>&)> *userDefFuncImpl; //array of function pointers
+    std::vector<unsigned int> *numOfFunctionParams;
+    char operatorList[5];
+    std::string s;
+    int charToInt(char c);
+    bool doesSucceedOperator( int index) const;
+    int findNextOperator(int index);
+    long double stringToDouble(std::string s);
+    std::string doubleToString (long double d);
+    void specialParse(std::string &expression);
+    void checkForBrackets();
+    long double computeFunction(int index, const std::vector<long double>& args) throw(ULMPError);
+    bool solveFunctions();
+    void populateOperators();
+    void populateNumbers();
+    long double evaluateExpression();
+};
+}
+class ULMP {
+
+public:
+    ULMP();
+    void checkForErrors();
+    long double parseString(std::string expr);
+    void defineConstant(std::string constantName, long double value);
+    void defineFunction(std::string funcName, long double (*func)(const std::vector<long double>& args), unsigned int num);
+    ~ULMP();
+private:
+    __impl::ULMPCore *u;
+    void removeWhiteSpace();
+    std::vector<std::string> *constants;
+    std::vector<long double> *constantsValues;
+    void preProcess();
+    bool isALetter(char c);
+    std::string s;
 };
 
-class ULMP
-{
-public:
-  ULMP();
-  void checkForErrors();
-  long double parseString(std::string expr);
-private:
-  void removeWhiteSpace();
-  void preProcess();
-  bool isNumber ( char c );
-  std::string s;
-};
-class ULMPCore
-{
-public:
-  ULMPCore();
-  long double parseString(std::string expression="");
-  bool checkIfMultiFunc();
-  bool isOperator(char c);
-  bool checkIfFuncIndexIsMultiFunc(unsigned int index);
-  std::string& getProcessedString();
-private:
-  //list of allowable operators
-  bool multiFunc;
-  Array<std::string> * functionList;
-  Array<long double> *numbers;
-  Array<char> *operators;
-  Array<int> *operatorLocations;
-  char operatorList[5];
-  std::string s;
-  int charToInt(char c);
-  bool doesSucceedOperator( int index) const;
-  int findNextOperator(int index);
-  long double stringToDouble(std::string s);
-  std::string doubleToString (long double d);
-  void specialParse(std::string &expression);
-  void checkForBrackets();
-  long double computeFunction( int index, long double *fArg, long double *fArg2) throw(ULMPError);
-  bool solveFunctions();
-  void populateOperators();
-  void populateNumbers();
-  long double evaluateExpression();
-};
 extern "C" long double ULMPParse(const char * expr);
 
 #endif // ULMP_H
+
