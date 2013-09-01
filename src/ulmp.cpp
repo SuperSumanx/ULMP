@@ -186,8 +186,6 @@ long double __impl::ULMPCore::stringToDouble(std::string str)
         c=charToInt(str.at(i));
         if(c==10)
         {
-            std::cout <<"The string at this time was " << s << std::endl;
-            std::cout << "The argument was " << str << std::endl;
             std::string errMsg= "Undefined token in expression: " ;
             errMsg.push_back(str.at(i));
             throw ULMPError(errMsg); //if we find a 10, it means a non-number character was found, so throw an error
@@ -656,7 +654,6 @@ void ULMP::defineFunction(std::string funcName, long double(*func)(const std::ve
 {
     for(unsigned int i=0; i<s.length(); i++)
     {
-        std::cout << s.at(i) << std::endl;
         if(!isALetter(s.at(i)) || s.at(i)!='_')
         {
             throw ULMPError("Function cannot have numbers or special characters");
