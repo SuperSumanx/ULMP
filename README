@@ -4,4 +4,4 @@ Developed By Sumanth - 2013
 
 Simple Math Expression Parser written from scratch using C++.
 Supports the basic four operators (+,-,*,/), along with power function (^).
-Also supports single parameter and double parameter functions(for now, only built-in functions)
+Also supports arbitary-numbered functions(both user-defined and built-in) 
