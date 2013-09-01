@@ -49,17 +49,25 @@
 #include <string>
 #include <iostream>
 #include <stack> //Used in parenthesis processing
+#include <exception>
 
-class ULMPError {
+class ULMPError : public std::exception
+{
 public:
     ULMPError(std::string errorMessage);
     std::string getErrorMessage();
+    virtual const char * what()
+    {
+        return erMesg.c_str();
+    }
 private:
     std::string erMesg;
 };
 
-namespace __impl { //do not use!!
-class ULMPCore {
+namespace __impl   //do not use!!
+{
+class ULMPCore
+{
 public:
     ULMPCore();
     long double parseString(std::string expression="");
@@ -94,7 +102,8 @@ private:
     long double evaluateExpression();
 };
 }
-class ULMP {
+class ULMP
+{
 
 public:
     ULMP();

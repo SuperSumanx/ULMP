@@ -26,22 +26,33 @@
 #include <ctime>
 #include <iostream>
 
-long double computeJimmyJam(const std::vector<long double>& args) {
+long double computeJimmyJam(const std::vector<long double>& args)
+{
     return (args.at(0)*args.at(1))/2*(args.at(0)/args.at(1));
 }
-long double max3(const std::vector<long double> & args) {
+
+long double max_three(const std::vector<long double> & args)
+{
     return args[0]>args[1]? args[1]>args[2]? args[1] : args[2] : args[1]>args[2]? args[1] : args[2];
 }
-int main(int argc, char **argv) {
+
+int main(int argc, char **argv)
+{
     ULMP u;
-    if(argc!=1 ){
+    if(argc!=1 )
+    {
         std::cout << "Unrecognised argument " << argv[1] << std::endl;
     }
-    try{
-        std::string inputString="2.324/234*sin(20)/2.243/mod(2,3)*tan(20.24)*max3(2,3,5)";
-        std::cout  << "The answer is " << u.parseString(inputString) << std::endl;
-    }catch(ULMPError e){
-        std::cout  << e.getErrorMessage() << std::endl;
+    try
+    {
+        u.defineFunction("max_three", max_three, 3);
+        std::string inputString="sin(cos(sin(tan(20*e^-2))))";
+        std::cout << "The string was " << inputString << std::endl;
+        std::cout << "The answer is " << u.parseString(inputString) << std::endl;
+    }
+    catch(ULMPError e)
+    {
+        std::cout  << e.what() << std::endl;
     }
 }
 
